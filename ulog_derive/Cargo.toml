@@ -11,5 +11,8 @@ quote = "1.0.10"
 ulog = { path = "../ulog" }
 proc-macro2 = "1.0.32"
 
+[dev-dependencies]
+serde = { version = "1.0.130", features = ["derive"] }
+
 [lib]
 proc-macro = true

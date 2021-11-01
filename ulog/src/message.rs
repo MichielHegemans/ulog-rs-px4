@@ -1,11 +1,12 @@
-use crate::message::Error::MessageSizeTooLarge;
+use serde::Serialize;
 
 #[derive(Debug)]
 pub enum Error {
-    MessageSizeTooLarge(usize)
+    MessageSizeTooLarge(usize),
+    SerializeError(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct MessageHeader {
     _msg_size: u16,
     _msg_type: u8,
@@ -14,7 +15,7 @@ pub struct MessageHeader {
 pub struct Header;
 pub struct FlagBits;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Format {
     pub header: MessageHeader,
     /*
@@ -32,7 +33,7 @@ impl Format {
     pub fn new(format: String) -> Result<Self, Error> {
         let msg_size = match format.len() {
             x if x <= u16::MAX as usize => x as u16,
-            x => return Err(MessageSizeTooLarge(x)),
+            x => return Err(Error::MessageSizeTooLarge(x)),
         };
 
         Ok(Format {
@@ -50,7 +51,32 @@ pub struct InfoMultipleHeader;
 pub struct ParameterDefaultHeader;
 pub struct AddLogged;
 pub struct RemoveLogged;
-pub struct Data;
+
+#[derive(Debug, Serialize)]
+pub struct Data {
+    pub header: MessageHeader,
+    pub msg_id: u16,
+    pub data: Vec<u8>,
+}
+
+impl Data {
+    pub fn new(data: Vec<u8>) -> Result<Self, Error> {
+        let msg_size = match data.len() {
+            x if x <= (u16::MAX - 2) as usize => x as u16,
+            x => return Err(Error::MessageSizeTooLarge(x))
+        };
+
+        Ok(Self {
+            header: MessageHeader {
+                _msg_size: msg_size + 2,
+                _msg_type: b'D'
+            },
+            msg_id: 0,
+            data,
+        })
+    }
+}
+
 pub struct Logging;
 pub struct LoggingTagged;
 pub struct Sync;

@@ -5,15 +5,14 @@ extern crate quote;
 
 use proc_macro::{TokenStream};
 use syn::spanned::Spanned;
-use syn::{Data, DeriveInput, Fields, GenericParam, Generics, Ident};
+use syn::{Data, DeriveInput, Fields, Ident};
 
 #[proc_macro_derive(Data)]
 pub fn derive_data(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = input.ident;
-    let generics = add_trait_bounds(input.generics);
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let (message_name_code, message_name) = build_message_name(&name);
     let format_str = build_format_str(&input.data, &name);
 
@@ -27,6 +26,13 @@ pub fn derive_data(input: TokenStream) -> TokenStream {
 
             fn message_format() -> Result<ulog::message::Format, ulog::message::Error> {
                 #format_str
+            }
+
+            fn message(&self) -> Result<ulog::message::Data, ulog::message::Error> {
+                let data = ulog::ser::to_vec_u8(&self).map_err(|e| ulog::message::Error::SerializeError(e.to_string()))?;
+                let message = ulog::message::Data::new(data)?;
+
+                Ok(message)
             }
         }
     };
@@ -89,14 +95,4 @@ fn build_message_name(ident: &Ident) -> (proc_macro2::TokenStream, Ident) {
     };
 
     (code, message_name)
-}
-
-fn add_trait_bounds(mut generics: Generics) -> Generics {
-    for param in &mut generics.params {
-        if let GenericParam::Type(ref mut type_param) = *param {
-            type_param.bounds.push(parse_quote!(ulog::Data));
-        }
-    }
-
-    generics
 }

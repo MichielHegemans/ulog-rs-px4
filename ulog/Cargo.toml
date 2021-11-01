@@ -6,4 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = "1.0.130"
+serde = { version = "1.0.130", features = ["derive"] }
+thiserror = "1.0.30"
+
+[dev-dependencies]
+ulog_derive = { path = "../ulog_derive" }

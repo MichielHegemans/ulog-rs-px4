@@ -1,8 +1,10 @@
 pub mod message;
+pub mod ser;
 
 pub trait Data {
     fn message_name() -> &'static str;
     fn message_format() -> Result<message::Format, message::Error>;
+    fn message(&self) -> Result<message::Data, message::Error>;
 }
 
 pub trait DataType {
